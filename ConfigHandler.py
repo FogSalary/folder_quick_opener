@@ -7,6 +7,10 @@ class ConfigHandler:
         self.config = configparser.ConfigParser()
         self.config.read(ini_path, encoding='utf-8-sig')
 
+    def read(self, ini_path):
+        self.config.clear()
+        self.config.read(ini_path, encoding='utf-8-sig')
+
     def add_section(self, sec):
         self.config.add_section(sec)
 

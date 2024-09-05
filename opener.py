@@ -1,7 +1,7 @@
 import os
 import sys
 from ConfigHandler import ConfigHandler
-from PyQt5.QtWidgets import QApplication, QWidget
+from PyQt5.QtWidgets import QApplication, QWidget, QStatusBar, QLabel, QVBoxLayout, QFileDialog
 from Ui_opener import Ui_Form
 
 
@@ -9,13 +9,25 @@ class Opener(QWidget, Ui_Form):
     def __init__(self) -> None:
         super().__init__()
         self.setupUi(self)
-        self.ini_path = os.path.join(os.path.dirname(__file__), 'test.ini')
-        self.cfg = ConfigHandler(self.ini_path)
         self.setup_ui()
         self.setup_widget_connect()
 
     def setup_ui(self):
+        self.ini_path = os.path.join(os.path.dirname(__file__), 'config.ini')
+        self.inicfg = ConfigHandler(self.ini_path)
+        self.user_cfg_path = self.inicfg.get_value('settings', 'name')
+        self.cfg = ConfigHandler(self.user_cfg_path)
+
         self.setWindowTitle('Opener')
+        self.status_bar = QStatusBar()  # 创建状态栏
+        self.layout = QVBoxLayout()     # 创建竖直布局
+        self.layout.addWidget(self.frame)  # 添加控件到布局
+        self.layout.addWidget(self.status_bar)  # 添加状态栏到布局底部
+        self.setLayout(self.layout)     # 设置布局
+        self.layout.setStretch(0, 5)    # 设置 frame 占 5 份
+        self.layout.setStretch(0, 1)    # 设置 frame 占 1 份
+        self.status_bar.showMessage('Current Config ini: %s' % os.path.basename(self.user_cfg_path))  # 更新状态栏上的消息
+
         if self.radiobtn_localhost.isChecked():
             self.lineEdit_remote_ip.setDisabled(True)
         else:
@@ -41,6 +53,7 @@ class Opener(QWidget, Ui_Form):
         self.btn_del.clicked.connect(self.on_btn_del_clicked_slot)
         self.btn_open.clicked.connect(self.on_btn_open_clicked_slot)
         self.btn_modify.clicked.connect(self.on_btn_modify_clicked_slot)
+        self.btn_load_cfg.clicked.connect(self.on_btn_load_cfg_clicked_slot)
         self.radiobtn_localhost.clicked.connect(self.on_radiobtn_clicked_slot)
         self.radiobtn_remote.clicked.connect(self.on_radiobtn_clicked_slot)
         self.cbBox_folder_name.currentTextChanged.connect(self.on_cbBox_folder_name_currentTextChanged_slot)
@@ -64,6 +77,13 @@ class Opener(QWidget, Ui_Form):
         curr_folder_name = self.cbBox_folder_name.currentText()
         new_folder_name = self.lineEdit_folder_name.text()
         self.cfg.update_option('folder_path', curr_folder_name, new_folder_name)
+    
+    def on_btn_load_cfg_clicked_slot(self):
+        self.user_cfg_path, _ = QFileDialog.getOpenFileName(self, "Select File", "", "Config FIle (*.ini);;All Files (*)")
+        self.status_bar.showMessage('Current Config ini: %s' % os.path.basename(self.user_cfg_path))
+        self.cfg.read(self.user_cfg_path)
+        self.update_cbBox_folder_name_items()
+        print(self.cfg.get_options('folder_path'))
 
     def on_radiobtn_clicked_slot(self):
         radio_btn = self.sender()
